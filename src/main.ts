@@ -1,6 +1,7 @@
 import mri from 'mri';
 import { ConfigManager } from './modules/config';
-
+import { LokiPollManager } from './modules/loki/LokiPollManager';
+import { Config } from './modules/config/schema';
 const init = async () => {
     const args = mri(process.argv.slice(2), {
         alias: {
@@ -14,13 +15,18 @@ const init = async () => {
     }
 
     const manager = new ConfigManager();
-
+    let config: Config;
     try {
-        await manager.parse(args.path);
+        config = await manager.parse(args.path);
     } catch (configParseErrors) {
         for (const e of configParseErrors) {
             console.log(e.message);
         }
     }
+
+    const loki = new LokiPollManager({ ...config.loki, poll: config.poll }, []);
+    setInterval(function () {
+        loki.poll();
+    }, parseInt(config.poll.every) * 1000 * 60);
 };
 init();
