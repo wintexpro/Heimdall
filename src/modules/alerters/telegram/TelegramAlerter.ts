@@ -44,7 +44,7 @@ export class TelegramAlerter implements IAlerter {
                 method: 'post',
                 body: JSON.stringify({
                     chat_id: this.chatId,
-                    text: 'initialized',
+                    text: 'Heimdall initialized!',
                 }),
                 headers: { 'Content-Type': 'application/json' },
             })
