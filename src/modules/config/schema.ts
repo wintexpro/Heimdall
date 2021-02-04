@@ -67,12 +67,12 @@ export const configValidator = new Schema({
     },
 });
 
-export type TelegramAlerter = {
+export type TelegramAlerterConfig = {
     botToken: string;
     chatId: string;
 };
 
-export type EmailAlerter = {
+export type EmailAlerterConfig = {
     host: string;
     port: number;
     secure: boolean;
@@ -91,5 +91,9 @@ export type Config = {
         every: string;
         label: string[];
     };
-    alert: TelegramAlerter | EmailAlerter;
+    alert: {
+        telegram: TelegramAlerterConfig;
+    } & {
+        email: EmailAlerterConfig;
+    };
 };

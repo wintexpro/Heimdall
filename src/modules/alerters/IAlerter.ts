@@ -1,3 +1,3 @@
 export interface IAlerter {
-    alert(message: string): boolean;
+    alert(lokiResult: [string, string]): Promise<boolean>; // loki parsed result is an array with [0] = timestamp nanoseconds, [1] = parsed value
 }

@@ -38,7 +38,9 @@ export class LokiPollManager {
             return;
         }
         for (const r of result.data.result[0]?.values) {
-            console.log(r);
+            for (const alerter of this.alerters) {
+                alerter.alert(r);
+            }
         }
     }
 
