@@ -74,11 +74,16 @@ export type TelegramAlerterConfig = {
 
 export type EmailAlerterConfig = {
     host: string;
-    port: number;
     secure: boolean;
     auth: {
         user: string;
         pass: string;
+    };
+    message: {
+        from: string;
+        to: string;
+        cc?: string;
+        subject?: string
     };
 };
 
