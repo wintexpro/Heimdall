@@ -12,14 +12,20 @@ export class TelegramAlerter implements IAlerter {
         this.testConfig();
     }
 
-    public async alert(lokiResult: [string, string]): Promise<boolean> {
-        if (lokiResult[1]) {
+    public async alert(lokiRoundtripResult: string[][]): Promise<boolean> {
+        let text = '';
+        for (const lokiResult of lokiRoundtripResult) {
+            if (lokiResult[1]) {
+                text += `${this.buildMessageFromLokiData(lokiResult)}\n`;
+            }
+        }
+        if (text.length > 0) {
             const response: any = await (
                 await fetch(`${this.apiUrl}/sendMessage`, {
                     method: 'post',
                     body: JSON.stringify({
                         chat_id: this.chatId,
-                        text: this.buildMessageFromLokiData(lokiResult),
+                        text,
                     }),
                     headers: { 'Content-Type': 'application/json' },
                 })
@@ -29,7 +35,7 @@ export class TelegramAlerter implements IAlerter {
             }
             return response.ok as boolean;
         } else {
-            return false;
+            return true;
         }
     }
 
@@ -57,7 +63,7 @@ export class TelegramAlerter implements IAlerter {
         return;
     }
 
-    private buildMessageFromLokiData(message: [string, string]): string {
+    public buildMessageFromLokiData(message: string[]): string {
         return `${new Date(parseInt(message[0]) / 1000000)}: ${message[1]}`;
     }
 }

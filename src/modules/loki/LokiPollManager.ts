@@ -37,9 +37,9 @@ export class LokiPollManager {
         if (result.data.result.length == 0) {
             return;
         }
-        for (const r of result.data.result[0]?.values) {
+        if (result.data.result[0]?.values?.length > 0) {
             for (const alerter of this.alerters) {
-                alerter.alert(r);
+                alerter.alert(result.data.result[0]?.values);
             }
         }
     }
