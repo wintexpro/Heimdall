@@ -49,9 +49,6 @@ export const configValidator = new Schema({
             host: {
                 type: String,
             },
-            port: {
-                type: Number,
-            },
             secure: {
                 type: Boolean,
             },
@@ -61,6 +58,17 @@ export const configValidator = new Schema({
                 },
                 pass: {
                     type: String,
+                },
+            },
+            message: {
+                from: {
+                    type: String
+                },
+                to: {
+                    type: String
+                },
+                subject: {
+                    type: String
                 },
             },
         },
@@ -82,7 +90,6 @@ export type EmailAlerterConfig = {
     message: {
         from: string;
         to: string;
-        cc?: string;
         subject?: string
     };
 };

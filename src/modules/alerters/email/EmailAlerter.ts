@@ -20,7 +20,6 @@ export class EmailAlerter implements IAlerter {
         this.testConfig(config.auth.user);
         this.from = config.message.from;
         this.to = config.message.to;
-        this.cc = config.message.cc;
         this.subject = config.message.subject
     }
 
@@ -31,7 +30,6 @@ export class EmailAlerter implements IAlerter {
                     text: this.buildMessageFromLokiData(lokiResult),
                     from: this.from,
                     to: this.to,
-                    cc: this.cc ? this.cc : '',
                     subject: this.subject ? this.subject : '',
                 });
                 await this.client.sendAsync(message);
