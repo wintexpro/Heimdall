@@ -12,20 +12,22 @@ export class TelegramAlerter implements IAlerter {
         this.testConfig();
     }
 
+    // TODO: signature must looks like alert(message: string)
     public async alert(lokiRoundtripResult: string[][]): Promise<boolean> {
-        let text = '';
+        // TODO: remove! next loop wll do templater!
+        let message = '';
         for (const lokiResult of lokiRoundtripResult) {
             if (lokiResult[1]) {
-                text += `${this.buildMessageFromLokiData(lokiResult)}\n`;
+                message += `${this.buildMessageFromLokiData(lokiResult)}\n`;
             }
         }
-        if (text.length > 0) {
+        if (message.length > 0) {
             const response: any = await (
                 await fetch(`${this.apiUrl}/sendMessage`, {
                     method: 'post',
                     body: JSON.stringify({
                         chat_id: this.chatId,
-                        text,
+                        text: message,
                     }),
                     headers: { 'Content-Type': 'application/json' },
                 })
@@ -63,6 +65,7 @@ export class TelegramAlerter implements IAlerter {
         return;
     }
 
+    // TODO: remove. it will do templater
     public buildMessageFromLokiData(message: string[]): string {
         return `${new Date(parseInt(message[0]) / 1000000)}: ${message[1]}`;
     }
