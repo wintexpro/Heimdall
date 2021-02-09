@@ -31,7 +31,7 @@ export class EmailAlerter implements IAlerter {
             });
             await this.client.sendAsync(messageClient);
         } catch (error) {
-            console.log(`Email alert error: ${error}`);
+            console.log(`email alert ${error.message}`);
         }
         return true;
     }
@@ -46,10 +46,10 @@ export class EmailAlerter implements IAlerter {
             });
             await this.client.sendAsync(message);
         } catch (error) {
-            console.log(`Email alert error: ${error}`);
+            console.log(`email alert ${error}`);
             return;
         }
-        console.log(`Email alerts initialized for ${user}`);
+        console.log(`email alerts initialized for ${user}`);
         return;
     }
 }

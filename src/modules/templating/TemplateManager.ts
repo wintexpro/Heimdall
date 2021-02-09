@@ -7,23 +7,22 @@ export class TemplateManager {
 
     public async template(lokiRoundtripResult: string[][]): Promise<string> {
         let message = '';
-        console.log(this.templateString);
         if (this.templateString) {
             for (const lokiResult of lokiRoundtripResult) {
-                let templateMessage = this.templateString;
+                const braceRegex = /{(\d+|[a-z$_][a-z\d$_]*?(?:\.[a-z\d$_]*?)*?)}/gi;
                 if (lokiResult[1]) {
                     try {
                         const values = JSON.parse(lokiResult[1]);
-                        for (const key in values) {
-                            const elementId = templateMessage.indexOf(`{${key}}`);
-                            if (elementId !== -1) {
-                                templateMessage = `${templateMessage.replace(`{${key}}`, values[key])}`;
+                        const templatedString = this.templateString.replace(braceRegex, (_, key) => {
+                            let result = values;
+                            for (const property of key.split('.')) {
+                                result = result ? result[property] : '';
                             }
-                            console.log(templateMessage);
-                        }
-                        message += `${this.buildMessageFromLokiData(lokiResult[0], templateMessage)}\n`;
+                            return String(result);
+                        });
+                        message += `${this.buildMessageFromLokiData(lokiResult[0], templatedString)}\n`;
                     } catch (error) {
-                        console.log(`Parse error: ${error}`);
+                        console.log(`json parse error`);
                     }
                 }
             }
