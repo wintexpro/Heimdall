@@ -3,6 +3,8 @@ import { ConfigManager } from './modules/config';
 import { LokiPollManager } from './modules/loki/LokiPollManager';
 import { Config } from './modules/config/schema';
 import { EmailAlerter, TelegramAlerter } from './modules/alerters';
+import { Templater } from './modules/templating';
+
 const init = async () => {
     const args = mri(process.argv.slice(2), {
         alias: {
@@ -30,7 +32,11 @@ const init = async () => {
         ...(config.alert.email ? [new EmailAlerter(config.alert.email)] : []),
     ];
 
-    const loki = new LokiPollManager({ ...config.loki, poll: config.poll }, { ...config.template }, enabledAlerters);
+    const loki = new LokiPollManager(
+        { ...config.loki, poll: config.poll },
+        new Templater(config.template),
+        enabledAlerters,
+    );
     setInterval(function () {
         loki.poll();
     }, parseInt(config.poll.every) * 1000 * 60);
