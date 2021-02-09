@@ -1,5 +1,6 @@
 import { IAlerter } from '../alerters/IAlerter';
 import fetch from 'node-fetch';
+import { TemplateManager } from '../templating';
 
 type LokiConfig = {
     host: string;
@@ -12,6 +13,7 @@ type LokiConfig = {
 
 export class LokiPollManager {
     public config: LokiConfig;
+    public templateManager: TemplateManager;
 
     public alerters: IAlerter[];
     private query: string;
@@ -19,8 +21,9 @@ export class LokiPollManager {
 
     public lastTime: number;
 
-    public constructor(config: LokiConfig, alerters: IAlerter[]) {
+    public constructor(config: LokiConfig, templateManager: TemplateManager, alerters: IAlerter[]) {
         this.config = config;
+        this.templateManager = templateManager;
         this.alerters = alerters;
         this.query = this.buildLokiQuery();
         this.baseUrl = `${this.config.host}:${this.config.port}/loki/api/v1/query_range?direction=forward&query=${this.query}`;
@@ -39,13 +42,7 @@ export class LokiPollManager {
         }
         if (result.data.result[0]?.values?.length > 0) {
             for (const alerter of this.alerters) {
-                /* TODO: call templater
-                 * templater check if templating enabled. If not - templater just concat all entries with '\n' (like current message in TelegramAlerter)
-                 * if config got template string, templater do its job (pars and templating)
-                 * result of templater working pass to next line call alerter.alert(templatedResult)
-                 * so alerts will only send ONE message
-                 */
-                alerter.alert(result.data.result[0]?.values);
+                alerter.alert(await this.templateManager.template(result.data.result[0]?.values));
             }
         }
     }
