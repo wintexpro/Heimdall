@@ -12,14 +12,22 @@ export class TelegramAlerter implements IAlerter {
         this.testConfig();
     }
 
-    public async alert(lokiResult: [string, string]): Promise<boolean> {
-        if (lokiResult[1]) {
+    // TODO: signature must looks like alert(message: string)
+    public async alert(lokiRoundtripResult: string[][]): Promise<boolean> {
+        // TODO: remove! next loop wll do templater!
+        let message = '';
+        for (const lokiResult of lokiRoundtripResult) {
+            if (lokiResult[1]) {
+                message += `${this.buildMessageFromLokiData(lokiResult)}\n`;
+            }
+        }
+        if (message.length > 0) {
             const response: any = await (
                 await fetch(`${this.apiUrl}/sendMessage`, {
                     method: 'post',
                     body: JSON.stringify({
                         chat_id: this.chatId,
-                        text: this.buildMessageFromLokiData(lokiResult),
+                        text: message,
                     }),
                     headers: { 'Content-Type': 'application/json' },
                 })
@@ -29,7 +37,7 @@ export class TelegramAlerter implements IAlerter {
             }
             return response.ok as boolean;
         } else {
-            return false;
+            return true;
         }
     }
 
@@ -57,7 +65,8 @@ export class TelegramAlerter implements IAlerter {
         return;
     }
 
-    private buildMessageFromLokiData(message: [string, string]): string {
+    // TODO: remove. it will do templater
+    public buildMessageFromLokiData(message: string[]): string {
         return `${new Date(parseInt(message[0]) / 1000000)}: ${message[1]}`;
     }
 }

@@ -37,9 +37,15 @@ export class LokiPollManager {
         if (result.data.result.length == 0) {
             return;
         }
-        for (const r of result.data.result[0]?.values) {
+        if (result.data.result[0]?.values?.length > 0) {
             for (const alerter of this.alerters) {
-                alerter.alert(r);
+                /* TODO: call templater
+                 * templater check if templating enabled. If not - templater just concat all entries with '\n' (like current message in TelegramAlerter)
+                 * if config got template string, templater do its job (pars and templating)
+                 * result of templater working pass to next line call alerter.alert(templatedResult)
+                 * so alerts will only send ONE message
+                 */
+                alerter.alert(result.data.result[0]?.values);
             }
         }
     }
