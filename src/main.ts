@@ -2,7 +2,7 @@ import mri from 'mri';
 import { ConfigManager } from './modules/config';
 import { LokiPollManager } from './modules/loki/LokiPollManager';
 import { Config } from './modules/config/schema';
-import { TelegramAlerter } from './modules/alerters';
+import { EmailAlerter, TelegramAlerter } from './modules/alerters';
 const init = async () => {
     const args = mri(process.argv.slice(2), {
         alias: {
@@ -27,10 +27,10 @@ const init = async () => {
     }
     const enabledAlerters = [
         ...(config.alert.telegram ? [new TelegramAlerter(config.alert.telegram)] : []),
-        ...(config.alert.email ? [] : []), // TODO email alertert not implemented yet
+        ...(config.alert.email ? [new EmailAlerter(config.alert.email)] : []),
     ];
 
-    const loki = new LokiPollManager({ ...config.loki, poll: config.poll }, enabledAlerters);
+    const loki = new LokiPollManager({ ...config.loki, poll: config.poll }, { ...config.template }, enabledAlerters);
     setInterval(function () {
         loki.poll();
     }, parseInt(config.poll.every) * 1000 * 60);

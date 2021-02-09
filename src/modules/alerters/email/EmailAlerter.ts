@@ -3,11 +3,9 @@ import { EmailAlerterConfig } from '../../config/schema';
 import { Message, SMTPClient } from 'emailjs';
 
 export class EmailAlerter implements IAlerter {
-
     public client: SMTPClient;
     public from: string;
     public to: string;
-    public cc?: string;
     public subject?: string;
 
     public constructor(config: EmailAlerterConfig) {
@@ -17,39 +15,41 @@ export class EmailAlerter implements IAlerter {
             host: config.host,
             ssl: config.secure,
         });
-        this.testConfig(config.auth.user);
         this.from = config.message.from;
         this.to = config.message.to;
-        this.subject = config.message.subject
+        this.subject = config.message.subject;
+        this.testConfig(config.auth.user);
     }
 
-    public async alert(lokiResult: [string, string]): Promise<boolean> {
-        if (lokiResult[1]) {
-            try {
-                const message = new Message({
-                    text: this.buildMessageFromLokiData(lokiResult),
-                    from: this.from,
-                    to: this.to,
-                    subject: this.subject ? this.subject : '',
-                });
-                await this.client.sendAsync(message);
-            } catch (error) {
-                console.log(`Email alert error: ${error}`);
-            }
-        } else {
-            return false;
+    public async alert(message: string): Promise<boolean> {
+        try {
+            const messageClient = new Message({
+                text: message,
+                from: this.from,
+                to: this.to,
+                subject: this.subject ? this.subject : '',
+            });
+            await this.client.sendAsync(messageClient);
+        } catch (error) {
+            console.log(`Email alert error: ${error}`);
         }
         return true;
     }
 
     private async testConfig(user: string): Promise<void> {
-        console.log(user);
+        try {
+            const message = new Message({
+                text: 'Heimdall initialized!',
+                from: this.from,
+                to: this.to,
+                subject: this.subject ? this.subject : '',
+            });
+            await this.client.sendAsync(message);
+        } catch (error) {
+            console.log(`Email alert error: ${error}`);
+            return;
+        }
         console.log(`Email alerts initialized for ${user}`);
         return;
     }
-
-    private buildMessageFromLokiData(message: [string, string]): string {
-        return `${new Date(parseInt(message[0]) / 1000000)}: ${message[1]}`;
-    }
-
 }

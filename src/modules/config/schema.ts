@@ -62,15 +62,20 @@ export const configValidator = new Schema({
             },
             message: {
                 from: {
-                    type: String
+                    type: String,
                 },
                 to: {
-                    type: String
+                    type: String,
                 },
                 subject: {
-                    type: String
+                    type: String,
                 },
             },
+        },
+    },
+    template: {
+        text: {
+            type: String,
         },
     },
 });
@@ -78,6 +83,10 @@ export const configValidator = new Schema({
 export type TelegramAlerterConfig = {
     botToken: string;
     chatId: string;
+};
+
+export type TemplateConfig = {
+    text: string;
 };
 
 export type EmailAlerterConfig = {
@@ -90,7 +99,7 @@ export type EmailAlerterConfig = {
     message: {
         from: string;
         to: string;
-        subject?: string
+        subject?: string;
     };
 };
 
@@ -104,8 +113,11 @@ export type Config = {
         label: string[];
     };
     alert: {
-        telegram: TelegramAlerterConfig;
-    } & {
         email: EmailAlerterConfig;
+    } & {
+        telegram: TelegramAlerterConfig;
+    };
+    template: {
+        text: string;
     };
 };
