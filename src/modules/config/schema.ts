@@ -30,7 +30,7 @@ export const configValidator = new Schema({
                     labelStr: (val) => /^\S+:\S+$/.test(val),
                 },
                 message: {
-                    labelStr: (path) => `${path} must be a label:value string. ex [level:error, status:404] `,
+                    labelStr: (path) => `${path} must be a label:value string. ex [level:error, status:404]`,
                 },
             },
             required: true,
@@ -39,15 +39,57 @@ export const configValidator = new Schema({
     alert: {
         telegram: {
             botToken: {
+                use: {
+                    requiredIfParentDefined: (val: string, ctx: any) => {
+                        if (ctx.alert.telegram && val) {
+                            return true;
+                        }
+                        if (ctx.alert.telegram === undefined) {
+                            return true;
+                        }
+                        return false;
+                    },
+                },
+                message: {
+                    requiredIfParentDefined: (path) => `if telegram is defined, ${path} must be defined too`,
+                },
                 type: String,
             },
             chatId: {
+                use: {
+                    requiredIfParentDefined: (val: string, ctx: any) => {
+                        if (ctx.alert.telegram && val) {
+                            return true;
+                        }
+                        if (ctx.alert.telegram === undefined) {
+                            return true;
+                        }
+                        return false;
+                    },
+                },
+                message: {
+                    requiredIfParentDefined: (path) => `if telegram is defined, ${path} must be defined too`,
+                },
                 type: String,
             },
         },
         email: {
             host: {
                 type: String,
+                use: {
+                    requiredIfParentDefined: (val: string, ctx: any) => {
+                        if (ctx.alert.email && val) {
+                            return true;
+                        }
+                        if (ctx.alert.email === undefined) {
+                            return true;
+                        }
+                        return false;
+                    },
+                },
+                message: {
+                    requiredIfParentDefined: (path) => `if email is defined, ${path} must be defined too`,
+                },
             },
             secure: {
                 type: Boolean,
@@ -55,16 +97,62 @@ export const configValidator = new Schema({
             auth: {
                 user: {
                     type: String,
+                    use: {
+                        requiredIfParentDefined: (val: string, ctx: any) => {
+                            if (ctx.alert.email && val) {
+                                return true;
+                            }
+                            if (ctx.alert.email === undefined) {
+                                return true;
+                            }
+                            return false;
+                        },
+                    },
+                    message: {
+                        requiredIfParentDefined: (path) => `if email.auth is defined, ${path} must be defined too`,
+                    },
                 },
                 pass: {
                     type: String,
+                    use: {
+                        requiredIfParentDefined: (val: string, ctx: any) => {
+                            if (ctx.alert.email && val) {
+                                return true;
+                            }
+                            if (ctx.alert.email === undefined) {
+                                return true;
+                            }
+                            return false;
+                        },
+                    },
+                    message: {
+                        requiredIfParentDefined: (path) => `if email.auth is defined, ${path} must be defined too`,
+                    },
                 },
             },
             message: {
                 from: {
+                    use: {
+                        emailFormat: (val, ctx: any) =>
+                            ctx.alert.email
+                                ? /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(val)
+                                : true,
+                    },
+                    message: {
+                        emailFormat: (path) => `${path} must be valid email`,
+                    },
                     type: String,
                 },
                 to: {
+                    use: {
+                        emailFormat: (val, ctx: any) =>
+                            ctx.alert.email
+                                ? /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(val)
+                                : true,
+                    },
+                    message: {
+                        emailFormat: (path) => `${path} must be valid email`,
+                    },
                     type: String,
                 },
                 subject: {
