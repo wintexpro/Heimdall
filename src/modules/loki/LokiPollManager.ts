@@ -1,6 +1,6 @@
 import { IAlerter } from '../alerters/IAlerter';
 import fetch from 'node-fetch';
-import { Templater } from '../templating';
+import { TemplateManager } from '../templating';
 
 type LokiConfig = {
     host: string;
@@ -13,7 +13,7 @@ type LokiConfig = {
 
 export class LokiPollManager {
     public config: LokiConfig;
-    public templater: Templater;
+    public templateManager: TemplateManager;
 
     public alerters: IAlerter[];
     private query: string;
@@ -21,9 +21,9 @@ export class LokiPollManager {
 
     public lastTime: number;
 
-    public constructor(config: LokiConfig, templater: Templater, alerters: IAlerter[]) {
+    public constructor(config: LokiConfig, templateManager: TemplateManager, alerters: IAlerter[]) {
         this.config = config;
-        this.templater = templater;
+        this.templateManager = templateManager;
         this.alerters = alerters;
         this.query = this.buildLokiQuery();
         this.baseUrl = `${this.config.host}:${this.config.port}/loki/api/v1/query_range?direction=forward&query=${this.query}`;
@@ -42,7 +42,7 @@ export class LokiPollManager {
         }
         if (result.data.result[0]?.values?.length > 0) {
             for (const alerter of this.alerters) {
-                alerter.alert(await this.templater.template(result.data.result[0]?.values));
+                alerter.alert(await this.templateManager.template(result.data.result[0]?.values));
             }
         }
     }

@@ -1,17 +1,16 @@
-import { TemplateConfig } from '../config/schema';
+export class TemplateManager {
+    public templateString: string;
 
-export class Templater {
-    public text: string;
-
-    public constructor(config: TemplateConfig) {
-        this.text = config.text;
+    public constructor(templateString: string) {
+        this.templateString = templateString;
     }
 
     public async template(lokiRoundtripResult: string[][]): Promise<string> {
         let message = '';
-        if (this.text) {
+        console.log(this.templateString);
+        if (this.templateString) {
             for (const lokiResult of lokiRoundtripResult) {
-                let templateMessage = this.text;
+                let templateMessage = this.templateString;
                 if (lokiResult[1]) {
                     try {
                         const values = JSON.parse(lokiResult[1]);
@@ -20,6 +19,7 @@ export class Templater {
                             if (elementId !== -1) {
                                 templateMessage = `${templateMessage.replace(`{${key}}`, values[key])}`;
                             }
+                            console.log(templateMessage);
                         }
                         message += `${this.buildMessageFromLokiData(lokiResult[0], templateMessage)}\n`;
                     } catch (error) {
