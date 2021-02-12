@@ -2,7 +2,7 @@ import mri from 'mri';
 import { ConfigManager } from './modules/config';
 import { LokiPollManager } from './modules/loki/LokiPollManager';
 import { Config } from './modules/config/schema';
-import { EmailAlerter, TelegramAlerter } from './modules/alerters';
+import { EmailAlerter, TelegramAlerter, WebhookAlerter } from './modules/alerters';
 import { TemplateManager } from './modules/templating';
 
 const init = async () => {
@@ -30,6 +30,7 @@ const init = async () => {
     const enabledAlerters = [
         ...(config.alert.telegram ? [new TelegramAlerter(config.alert.telegram)] : []),
         ...(config.alert.email ? [new EmailAlerter(config.alert.email)] : []),
+        ...(config.alert.webhook ? [new WebhookAlerter(config.alert.webhook)] : []),
     ];
 
     const templateManager = new TemplateManager(config.alert.templateString);

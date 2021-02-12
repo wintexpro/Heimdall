@@ -73,6 +73,38 @@ export const configValidator = new Schema({
                 type: String,
             },
         },
+        webhook: {
+            webhookUrl: {
+                use: {
+                    requiredIfParentDefined: (val: string, ctx: any) => {
+                        if (ctx.alert.webhook && val) {
+                            return true;
+                        }
+                        if (ctx.alert.webhook === undefined) {
+                            return true;
+                        }
+                        return false;
+                    },
+                },
+                message: {
+                    requiredIfParentDefined: (path) => `if webhook is defined, ${path} must be defined too`,
+                },
+                type: String
+            },
+            headers: {
+                type: Array,
+                each: {
+                    type: String,
+                    use: {
+                        labelStr: (val) => /^\S+:\'\S+\'$/.test(val),
+                    },
+                    message: {
+                        labelStr: (path) => `${path} must be a header:value string. ex [Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l]`,
+                    },
+                },
+                required: true,
+            },
+        },
         email: {
             host: {
                 type: String,
@@ -166,6 +198,11 @@ export const configValidator = new Schema({
     },
 });
 
+export type WebhookAlerterConfig = {
+    webhookUrl: string;
+    headers: string[];
+};
+
 export type TelegramAlerterConfig = {
     botToken: string;
     chatId: string;
@@ -196,6 +233,8 @@ export type Config = {
     };
     alert: {
         email: EmailAlerterConfig;
+    } & {
+        webhook: WebhookAlerterConfig;
     } & {
         telegram: TelegramAlerterConfig;
     } & {
