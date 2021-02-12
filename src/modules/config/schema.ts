@@ -171,6 +171,11 @@ export type TelegramAlerterConfig = {
     chatId: string;
 };
 
+export type SlackAlerterConfig = {
+    authToken: string;
+    channelId: string;
+};
+
 export type EmailAlerterConfig = {
     host: string;
     secure: boolean;
