@@ -33,7 +33,7 @@ const init = async () => {
     ];
 
     const templateManager = new TemplateManager(config.alert.templateString);
-    const loki = new LokiPollManager({ ...config.loki, poll: config.poll }, templateManager, enabledAlerters);
+    const loki = new LokiPollManager({ ...config.loki, poll: config.poll, aggregation: config.aggregation }, templateManager, enabledAlerters);
     setInterval(function () {
         loki.poll();
     }, parseInt(config.poll.every) * 1000 * 60);

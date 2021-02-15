@@ -9,7 +9,14 @@ type LokiConfig = {
         every: string;
         label: string[];
     };
+    aggregation: {
+        key: string;
+        limit: number;
+        timeFrame: string;
+    }
 };
+
+const aggregatedAlerts = new Map<string, number>();
 
 export class LokiPollManager {
     public config: LokiConfig;
@@ -34,17 +41,37 @@ export class LokiPollManager {
         const endTime = Date.now() * 1000000;
         const url = `${this.baseUrl}&start=${this.lastTime}&end=${endTime}`;
         console.log(`Call ${url}`);
-        this.lastTime = endTime;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result: any = await (await fetch(url)).json();
         if (result.data.result.length == 0) {
             return;
         }
-        if (result.data.result[0]?.values?.length > 0) {
-            for (const alerter of this.alerters) {
-                alerter.alert(await this.templateManager.template(result.data.result[0]?.values));
+        if (this.config.aggregation) {
+            for (const value of result.data.result[0]?.values) {
+                const key = value[this.config.aggregation.key];
+                aggregatedAlerts.set(key, (aggregatedAlerts.get(key) || 0) + 1);
+                if (aggregatedAlerts.get(key) > this.config.aggregation.limit) {
+                    this.alertAll(`${key} #${aggregatedAlerts.get(value)}`);
+                    aggregatedAlerts.delete(key);
+                }
+            }
+            // alert
+            if (endTime - this.lastTime > parseInt(this.config.aggregation.timeFrame) * 1000000) {
+                if (aggregatedAlerts.size) {
+                    let message = '';
+                    for (const [key,value] of aggregatedAlerts.entries()) {
+                        message += `${key} #${value}`;
+                    }
+                    this.alertAll(message);
+                    aggregatedAlerts.clear();
+                }
+            }
+        } else {
+            if (result.data.result[0]?.values?.length > 0) {
+                this.alertAll(await this.templateManager.template(result.data.result[0]?.values));
             }
         }
+        this.lastTime = endTime;
     }
 
     private buildLokiQuery(): string {
@@ -57,5 +84,11 @@ export class LokiPollManager {
         query = query.split(' ').join(',');
         const result = `{${query}}`;
         return result;
+    }
+
+    private async alertAll(message: string) {
+        for (const alerter of this.alerters) {
+            alerter.alert(message);
+        }
     }
 }
