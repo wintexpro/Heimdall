@@ -200,6 +200,54 @@ export const configValidator = new Schema({
             type: String,
         },
     },
+    aggregation: {
+        key: {
+            type: String,
+            use: {
+                requiredIfParentDefined: (val: string, ctx: any) => {
+                    if (ctx.aggregation && val) {
+                        return true;
+                    }
+                    if (ctx.aggregation === undefined) {
+                        return true;
+                    }
+                    return false;
+                },
+            },
+            message: {
+                requiredIfParentDefined: (path) => `if aggregation is defined, ${path} must be defined too`,
+            },
+        },
+        limit: {
+            required: false,
+            type: Number,
+            use: {
+                isPositiveInteger: (val: number, ctx: any) => {
+                    return val !== undefined ? val > 0 && Number.isInteger(val) : true;
+                },
+            },
+            message: {
+                isPositiveInteger: (path) => `${path} must be a positive integer number`,
+            },
+        },
+        timeFrame: {
+            type: String,
+            use: {
+                timeStr: (val: string, ctx: any) => {
+                    if (ctx.aggregation && val) {
+                        return /^[0-9]*m$/.test(val);
+                    }
+                    if (ctx.aggregation === undefined) {
+                        return true;
+                    }
+                    return false;
+                },
+            },
+            message: {
+                timeStr: (path) => `${path} must be a time string (minutes only). ex: 5m, 10m`,
+            },
+        },
+    },
 });
 
 export type TelegramAlerterConfig = {
@@ -234,6 +282,11 @@ export type Config = {
     poll: {
         every: string;
         label: string[];
+    };
+    aggregation: {
+        key: string;
+        limit: number;
+        timeFrame: string;
     };
     alert: {
         email: EmailAlerterConfig;
