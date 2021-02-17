@@ -28,7 +28,7 @@ Heimdall has a global configuration file, **config.yaml**, which defines several
     - chatId - unique identifier for the target telegram chat.
   - **webhook** initialize webhook alerter module
     - webhookUrl - target url for webhooks sending.
-    - headers - is a yaml array of headers, which will send with webhooks. Formatted like **header:'value'**.
+    - headers - is a yaml array of headers, which will send with webhooks. Formatted like **header:value**.
   - **email** initialize email alerter module
     - host - smtp host of your mail server
     - secure - connect the SMTP host using TLS
