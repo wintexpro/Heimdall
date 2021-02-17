@@ -96,14 +96,21 @@ export const configValidator = new Schema({
                 each: {
                     type: String,
                     use: {
-                        labelStr: (val) => /^\S+:\'\S+\'$/.test(val),
+                        labelStr: (val: string, ctx: any) => {
+                            if (ctx.alert.email && val) {
+                                return /^\S+:\S+$/.test(val);
+                            }
+                            if (ctx.alert.email === undefined) {
+                                return true;
+                            }
+                            return false;
+                        },
                     },
                     message: {
                         labelStr: (path) =>
                             `${path} must be a header:value string. ex [Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l]`,
                     },
                 },
-                required: true,
             },
         },
         slack: {
