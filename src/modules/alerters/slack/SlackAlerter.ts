@@ -17,19 +17,18 @@ export class SlackAlerter implements IAlerter {
             const response: any = await (
                 await fetch(`https://slack.com/api/chat.postMessage`, {
                     method: 'post',
-                    body: {
+                    body: JSON.stringify({
                         channel: this.channelId,
-                        text: message
-                    },
+                        text: message,
+                    }),
                     headers: {
                         'Content-Type': 'application/json; charset=utf-8',
-                        'Authorization': `Bearer ${this.authToken}`
+                        Authorization: `Bearer ${this.authToken}`,
                     },
-                    json: true
                 })
             ).json();
             if (!response.ok) {
-                console.log(`slack alert ${response.error}`);
+                console.log(`slack alert error: ${response.error}`);
             }
             return response.ok as boolean;
         } else {
@@ -41,19 +40,18 @@ export class SlackAlerter implements IAlerter {
         const chatResponse: any = await (
             await fetch(`https://slack.com/api/chat.postMessage`, {
                 method: 'post',
-                body: {
+                body: JSON.stringify({
                     channel: this.channelId,
-                    text: 'Heimdall initialized!'
-                },
+                    text: 'Heimdall initialized!',
+                }),
                 headers: {
                     'Content-Type': 'application/json; charset=utf-8',
-                    'Authorization': `Bearer ${this.authToken}`
+                    Authorization: `Bearer ${this.authToken}`,
                 },
-                json: true
             })
-        );
+        ).json();
         if (!chatResponse.ok) {
-            console.log('slack error: chat not found');
+            console.log(`slack alert error (testConfig): ${chatResponse.error}`);
             process.exit(1);
         }
         console.log(`slack alerts initialized for ${this.channelId}`);

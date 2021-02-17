@@ -89,7 +89,7 @@ export const configValidator = new Schema({
                 message: {
                     requiredIfParentDefined: (path) => `if slack is defined, ${path} must be defined too`,
                 },
-                type: String
+                type: String,
             },
             channelId: {
                 use: {
@@ -107,7 +107,7 @@ export const configValidator = new Schema({
                     requiredIfParentDefined: (path) => `if slack is defined, ${path} must be defined too`,
                 },
                 type: String,
-            }
+            },
         },
         email: {
             host: {
