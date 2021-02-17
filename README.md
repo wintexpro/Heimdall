@@ -18,6 +18,10 @@ Heimdall has a global configuration file, **config.yaml**, which defines several
 - **poll** section defines loki polling interval and loki query labels
   - every - How often Heimdall should query Loki. Heimdall will remember the last time it ran the given query, and periodically query from that time until the present. The format of this field is a timestring like **5m, 10m** (minutes only!).
   - label - Is a yaml array of loki labels and values, formatted like **label:value**. For each array value heimdall will build string for loki queryng. EX: **level:error** will look like level="error". Heimdall can only querying by lables at this moment!
+- **aggregation** section defines logs aggregation before message sending.
+  - key - the key by which collect logs.
+  - limit - if amount of messages will exceed this number, alert will be sent immediately.
+  - timeFrame - interval between alerts if limit of messages not exceeded. The format of this field is a timestring like **5m, 10m** (minutes only!).
 - **alert** section defines a list of alerts to run on each query match
   - **telegram** initialize telegram alerter module
     - botToken - telegram bot token is a string, that will be required to authorize the bot and send requests to the Telegram Bot API. You can learn about obtaining tokens and generating new ones in this [document](https://core.telegram.org/bots#botfather).
@@ -46,6 +50,10 @@ poll:
   label:
     - job:api
     - level:error
+aggregation:
+    key: message
+    limit: 100
+    timeFrame: 5m
 alert:
   telegram:
     botToken: '1394072***:XXXxXXx5xXxxXxxxXx4XXXXx8x1XxXxXxX0'
@@ -55,6 +63,9 @@ alert:
     headers:
       - Authentication:'Basic YWxhZGRpbjpvcGVuc2VzYW1l'
       - Header2:'Value2'
+  slack:
+    authToken: 'xoxb-1111111111111-1111111111111-XXX12XXXXXXxx34xXXXXxxxx'
+    channelId: 'C0*********'
   email:
     host: smtp.mailserver.io
     secure: true

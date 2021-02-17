@@ -9,7 +9,20 @@ type LokiConfig = {
         every: string;
         label: string[];
     };
+    aggregation: {
+        key: string;
+        limit: number;
+        timeFrame: string;
+    };
 };
+
+// result data from Loki (when resultType = "streams")
+type LokiStreamResult = {
+    stream: Record<string, string>;
+    values: string[][];
+};
+
+const aggregatedLogs = new Map<string, number>();
 
 export class LokiPollManager {
     public config: LokiConfig;
@@ -19,7 +32,8 @@ export class LokiPollManager {
     private query: string;
     private baseUrl: string;
 
-    public lastTime: number;
+    public lastQueryTime: number;
+    public lastSendingTime: number;
 
     public constructor(config: LokiConfig, templateManager: TemplateManager, alerters: IAlerter[]) {
         this.config = config;
@@ -27,23 +41,78 @@ export class LokiPollManager {
         this.alerters = alerters;
         this.query = this.buildLokiQuery();
         this.baseUrl = `${this.config.host}:${this.config.port}/loki/api/v1/query_range?direction=forward&query=${this.query}`;
-        this.lastTime = Date.now() * 1000000;
+        this.lastQueryTime = this.lastSendingTime = Date.now() * 1000000;
     }
 
     public async poll(): Promise<void> {
-        const endTime = Date.now() * 1000000;
-        const url = `${this.baseUrl}&start=${this.lastTime}&end=${endTime}`;
+        const currentTime = Date.now() * 1000000;
+        const url = `${this.baseUrl}&start=${this.lastQueryTime}&end=${currentTime}`;
         console.log(`Call ${url}`);
-        this.lastTime = endTime;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result: any = await (await fetch(url)).json();
-        if (result.data.result.length == 0) {
-            return;
-        }
-        if (result.data.result[0]?.values?.length > 0) {
-            for (const alerter of this.alerters) {
-                alerter.alert(await this.templateManager.template(result.data.result[0]?.values));
+
+        if (this.config.aggregation) {
+            // parsing and aggregation
+            if (result.data.result.length > 0) {
+                for (const data of result.data.result) {
+                    const key = data.stream[this.config.aggregation.key];
+                    if (!key) {
+                        continue;
+                    }
+                    aggregatedLogs.set(key, (aggregatedLogs.get(key) || 0) + data.values.length);
+                }
             }
+            // early alert
+            if (this.config.aggregation.limit && aggregatedLogs.size > 0) {
+                let message = '';
+                const keysToDelete = [];
+                for (const [key, value] of aggregatedLogs.entries()) {
+                    if (value > this.config.aggregation.limit) {
+                        message += `\n${key} #${value}`;
+                        keysToDelete.push(key);
+                    }
+                }
+                this.alertAll(message);
+                keysToDelete.forEach((key) => aggregatedLogs.delete(key));
+            }
+        } else {
+            if (result.data.result.length === 0) {
+                return;
+            }
+            const lokiRoundtripResult: string[][] = [];
+            (result.data.result as LokiStreamResult[]).forEach((streamData) =>
+                lokiRoundtripResult.push(...streamData.values),
+            );
+            lokiRoundtripResult.sort((a, b) => {
+                if (Number(a[0]) < Number(b[0])) {
+                    return -1;
+                }
+                if (Number(a[0]) > Number(b[0])) {
+                    return 1;
+                }
+                return 0;
+            });
+            this.alertAll(await this.templateManager.template(lokiRoundtripResult));
+            this.lastSendingTime = currentTime;
+        }
+        this.lastQueryTime = currentTime;
+    }
+
+    public alertOnAggregation(): void {
+        const currentTime = Date.now() * 1000000;
+        if (
+            aggregatedLogs.size > 0 &&
+            currentTime - this.lastSendingTime >= parseInt(this.config.aggregation.timeFrame) * 60 * 1000000000
+        ) {
+            let message = `From ${new Date(currentTime / 1000000).toUTCString()}\nTo ${new Date(
+                this.lastSendingTime / 1000000,
+            ).toUTCString()}\n`;
+            for (const [key, value] of aggregatedLogs.entries()) {
+                message += `\n${key} #${value}`;
+            }
+            this.alertAll(message);
+            aggregatedLogs.clear();
+            this.lastSendingTime = currentTime;
         }
     }
 
@@ -57,5 +126,11 @@ export class LokiPollManager {
         query = query.split(' ').join(',');
         const result = `{${query}}`;
         return result;
+    }
+
+    private async alertAll(message: string) {
+        for (const alerter of this.alerters) {
+            alerter.alert(message);
+        }
     }
 }
