@@ -13,10 +13,16 @@ type LokiConfig = {
         key: string;
         limit: number;
         timeFrame: string;
-    }
+    };
 };
 
-const aggregatedAlerts = new Map<string, number>();
+// result data from Loki (when resultType = "streams")
+type LokiStreamResult = {
+    stream: Record<string, string>;
+    values: string[][];
+};
+
+const aggregatedLogs = new Map<string, number>();
 
 export class LokiPollManager {
     public config: LokiConfig;
@@ -26,7 +32,8 @@ export class LokiPollManager {
     private query: string;
     private baseUrl: string;
 
-    public lastTime: number;
+    public lastQueryTime: number;
+    public lastSendingTime: number;
 
     public constructor(config: LokiConfig, templateManager: TemplateManager, alerters: IAlerter[]) {
         this.config = config;
@@ -34,44 +41,70 @@ export class LokiPollManager {
         this.alerters = alerters;
         this.query = this.buildLokiQuery();
         this.baseUrl = `${this.config.host}:${this.config.port}/loki/api/v1/query_range?direction=forward&query=${this.query}`;
-        this.lastTime = Date.now() * 1000000;
+        this.lastQueryTime = this.lastSendingTime = Date.now() * 1000000;
     }
 
     public async poll(): Promise<void> {
-        const endTime = Date.now() * 1000000;
-        const url = `${this.baseUrl}&start=${this.lastTime}&end=${endTime}`;
+        const currentTime = Date.now() * 1000000;
+        const url = `${this.baseUrl}&start=${this.lastQueryTime}&end=${currentTime}`;
         console.log(`Call ${url}`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result: any = await (await fetch(url)).json();
-        if (result.data.result.length == 0) {
-            return;
-        }
+
         if (this.config.aggregation) {
-            for (const value of result.data.result[0]?.values) {
-                const key = value[this.config.aggregation.key];
-                aggregatedAlerts.set(key, (aggregatedAlerts.get(key) || 0) + 1);
-                if (aggregatedAlerts.get(key) > this.config.aggregation.limit) {
-                    this.alertAll(`${key} #${aggregatedAlerts.get(value)}`);
-                    aggregatedAlerts.delete(key);
+            // parsing and aggregation
+            if (result.data.result.length > 0) {
+                for (const data of result.data.result) {
+                    const key = data.stream[this.config.aggregation.key];
+                    aggregatedLogs.set(key, (aggregatedLogs.get(key) || 0) + data.values.length);
                 }
             }
-            // alert
-            if (endTime - this.lastTime > parseInt(this.config.aggregation.timeFrame) * 1000000) {
-                if (aggregatedAlerts.size) {
+            // early alert
+            if (aggregatedLogs.size > 0) {
+                let message = '';
+                const keysToDelete = [];
+                for (const [key, value] of aggregatedLogs.entries()) {
+                    if (value > this.config.aggregation.limit) {
+                        message += `\n${key} #${value}`;
+                        keysToDelete.push(key);
+                    }
+                }
+                this.alertAll(message);
+                keysToDelete.forEach((key) => aggregatedLogs.delete(key));
+            }
+            // schedule alert
+            if (currentTime - this.lastSendingTime >= parseInt(this.config.aggregation.timeFrame) * 60 * 1000000000) {
+                if (aggregatedLogs.size > 0) {
                     let message = '';
-                    for (const [key,value] of aggregatedAlerts.entries()) {
-                        message += `${key} #${value}`;
+                    for (const [key, value] of aggregatedLogs.entries()) {
+                        message += `\n${key} #${value}`;
                     }
                     this.alertAll(message);
-                    aggregatedAlerts.clear();
+                    aggregatedLogs.clear();
                 }
+                this.lastSendingTime = currentTime;
             }
         } else {
-            if (result.data.result[0]?.values?.length > 0) {
-                this.alertAll(await this.templateManager.template(result.data.result[0]?.values));
+            if (result.data.result.length === 0) {
+                return;
             }
+            const lokiRoundtripResult: string[][] = [];
+            (result.data.result as LokiStreamResult[]).forEach((streamData) =>
+                lokiRoundtripResult.push(...streamData.values),
+            );
+            lokiRoundtripResult.sort((a, b) => {
+                if (Number(a[0]) < Number(b[0])) {
+                    return -1;
+                }
+                if (Number(a[0]) > Number(b[0])) {
+                    return 1;
+                }
+                return 0;
+            });
+            this.alertAll(await this.templateManager.template(lokiRoundtripResult));
+            this.lastSendingTime = currentTime;
         }
-        this.lastTime = endTime;
+        this.lastQueryTime = currentTime;
     }
 
     private buildLokiQuery(): string {

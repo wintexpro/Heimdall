@@ -167,15 +167,16 @@ export const configValidator = new Schema({
     aggregation: {
         key: {
             type: String,
-            required: true,
-            requiredIfParentDefined: (val: string, ctx: any) => {
-                if (ctx.aggregation && val) {
-                    return true;
-                }
-                if (ctx.aggregation === undefined) {
-                    return true;
-                }
-                return false;
+            use: {
+                requiredIfParentDefined: (val: string, ctx: any) => {
+                    if (ctx.aggregation && val) {
+                        return true;
+                    }
+                    if (ctx.aggregation === undefined) {
+                        return true;
+                    }
+                    return false;
+                },
             },
             message: {
                 requiredIfParentDefined: (path) => `if aggregation is defined, ${path} must be defined too`,
@@ -183,12 +184,10 @@ export const configValidator = new Schema({
         },
         limit: {
             type: Number,
-            required: true,
             use: {
-                isPositiveInteger: (val) => val > 0 && Number.isInteger(val),
-                requiredIfParentDefined: (val: string, ctx: any) => {
+                isPositiveInteger: (val: number, ctx: any) => {
                     if (ctx.aggregation && val) {
-                        return true;
+                        return val > 0 && Number.isInteger(val);
                     }
                     if (ctx.aggregation === undefined) {
                         return true;
@@ -198,17 +197,14 @@ export const configValidator = new Schema({
             },
             message: {
                 isPositiveInteger: (path) => `${path} must be a positive integer number`,
-                requiredIfParentDefined: (path) => `if aggregation is defined, ${path} must be defined too`,
             },
         },
         timeFrame: {
             type: String,
-            required: true,
             use: {
-                timeStr: (val) => /^[0-9]*m$/.test(val),
-                requiredIfParentDefined: (val: string, ctx: any) => {
+                timeStr: (val: string, ctx: any) => {
                     if (ctx.aggregation && val) {
-                        return true;
+                        return /^[0-9]*m$/.test(val);
                     }
                     if (ctx.aggregation === undefined) {
                         return true;
@@ -218,10 +214,9 @@ export const configValidator = new Schema({
             },
             message: {
                 timeStr: (path) => `${path} must be a time string (minutes only). ex: 5m, 10m`,
-                requiredIfParentDefined: (path) => `if aggregation is defined, ${path} must be defined too`,
             },
-        }
-    }
+        },
+    },
 });
 
 export type TelegramAlerterConfig = {
