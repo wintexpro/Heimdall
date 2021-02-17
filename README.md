@@ -26,6 +26,9 @@ Heimdall has a global configuration file, **config.yaml**, which defines several
   - **telegram** initialize telegram alerter module
     - botToken - telegram bot token is a string, that will be required to authorize the bot and send requests to the Telegram Bot API. You can learn about obtaining tokens and generating new ones in this [document](https://core.telegram.org/bots#botfather).
     - chatId - unique identifier for the target telegram chat.
+  - **webhook** initialize webhook alerter module
+    - webhookUrl - target url for webhooks sending.
+    - headers - is a yaml array of headers, which will send with webhooks. Formatted like **header:value**.
   - **email** initialize email alerter module
     - host - smtp host of your mail server
     - secure - connect the SMTP host using TLS
@@ -55,6 +58,11 @@ alert:
   telegram:
     botToken: '1394072***:XXXxXXx5xXxxXxxxXx4XXXXx8x1XxXxXxX0'
     chatId: '217459***'
+  webhook:
+    webhookUrl: 'http://webhook123.url/endpoint'
+    headers:
+      - Authentication:'Basic YWxhZGRpbjpvcGVuc2VzYW1l'
+      - Header2:'Value2'
   slack:
     authToken: 'xoxb-1111111111111-1111111111111-XXX12XXXXXXxx34xXXXXxxxx'
     channelId: 'C0*********'
