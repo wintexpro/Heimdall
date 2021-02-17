@@ -41,5 +41,10 @@ const init = async () => {
     setInterval(function () {
         loki.poll();
     }, parseInt(config.poll.every) * 1000 * 60);
+    if (config.aggregation) {
+        setInterval(function () {
+            loki.alertOnAggregation();
+        }, 30000);
+    }
 };
 init();

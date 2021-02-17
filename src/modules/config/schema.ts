@@ -183,16 +183,11 @@ export const configValidator = new Schema({
             },
         },
         limit: {
+            required: false,
             type: Number,
             use: {
                 isPositiveInteger: (val: number, ctx: any) => {
-                    if (ctx.aggregation && val) {
-                        return val > 0 && Number.isInteger(val);
-                    }
-                    if (ctx.aggregation === undefined) {
-                        return true;
-                    }
-                    return false;
+                    return val !== undefined ? val > 0 && Number.isInteger(val) : true;
                 },
             },
             message: {

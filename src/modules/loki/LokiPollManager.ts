@@ -56,11 +56,14 @@ export class LokiPollManager {
             if (result.data.result.length > 0) {
                 for (const data of result.data.result) {
                     const key = data.stream[this.config.aggregation.key];
+                    if (!key) {
+                        continue;
+                    }
                     aggregatedLogs.set(key, (aggregatedLogs.get(key) || 0) + data.values.length);
                 }
             }
             // early alert
-            if (aggregatedLogs.size > 0) {
+            if (this.config.aggregation.limit && aggregatedLogs.size > 0) {
                 let message = '';
                 const keysToDelete = [];
                 for (const [key, value] of aggregatedLogs.entries()) {
@@ -71,18 +74,6 @@ export class LokiPollManager {
                 }
                 this.alertAll(message);
                 keysToDelete.forEach((key) => aggregatedLogs.delete(key));
-            }
-            // schedule alert
-            if (currentTime - this.lastSendingTime >= parseInt(this.config.aggregation.timeFrame) * 60 * 1000000000) {
-                if (aggregatedLogs.size > 0) {
-                    let message = '';
-                    for (const [key, value] of aggregatedLogs.entries()) {
-                        message += `\n${key} #${value}`;
-                    }
-                    this.alertAll(message);
-                    aggregatedLogs.clear();
-                }
-                this.lastSendingTime = currentTime;
             }
         } else {
             if (result.data.result.length === 0) {
@@ -105,6 +96,24 @@ export class LokiPollManager {
             this.lastSendingTime = currentTime;
         }
         this.lastQueryTime = currentTime;
+    }
+
+    public alertOnAggregation(): void {
+        const currentTime = Date.now() * 1000000;
+        if (
+            aggregatedLogs.size > 0 &&
+            currentTime - this.lastSendingTime >= parseInt(this.config.aggregation.timeFrame) * 60 * 1000000000
+        ) {
+            let message = `From ${new Date(currentTime / 1000000).toUTCString()}\nTo ${new Date(
+                this.lastSendingTime / 1000000,
+            ).toUTCString()}\n`;
+            for (const [key, value] of aggregatedLogs.entries()) {
+                message += `\n${key} #${value}`;
+            }
+            this.alertAll(message);
+            aggregatedLogs.clear();
+            this.lastSendingTime = currentTime;
+        }
     }
 
     private buildLokiQuery(): string {
