@@ -55,6 +55,9 @@ alert:
   telegram:
     botToken: '1394072***:XXXxXXx5xXxxXxxxXx4XXXXx8x1XxXxXxX0'
     chatId: '217459***'
+  slack:
+    authToken: 'xoxb-1111111111111-1111111111111-XXX12XXXXXXxx34xXXXXxxxx'
+    channelId: 'C0*********'
   email:
     host: smtp.mailserver.io
     secure: true

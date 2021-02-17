@@ -73,6 +73,42 @@ export const configValidator = new Schema({
                 type: String,
             },
         },
+        slack: {
+            authToken: {
+                use: {
+                    requiredIfParentDefined: (val: string, ctx: any) => {
+                        if (ctx.alert.slack && val) {
+                            return true;
+                        }
+                        if (ctx.alert.slack === undefined) {
+                            return true;
+                        }
+                        return false;
+                    },
+                },
+                message: {
+                    requiredIfParentDefined: (path) => `if slack is defined, ${path} must be defined too`,
+                },
+                type: String,
+            },
+            channelId: {
+                use: {
+                    requiredIfParentDefined: (val: string, ctx: any) => {
+                        if (ctx.alert.slack && val) {
+                            return true;
+                        }
+                        if (ctx.alert.slack === undefined) {
+                            return true;
+                        }
+                        return false;
+                    },
+                },
+                message: {
+                    requiredIfParentDefined: (path) => `if slack is defined, ${path} must be defined too`,
+                },
+                type: String,
+            },
+        },
         email: {
             host: {
                 type: String,
@@ -219,6 +255,11 @@ export type TelegramAlerterConfig = {
     chatId: string;
 };
 
+export type SlackAlerterConfig = {
+    authToken: string;
+    channelId: string;
+};
+
 export type EmailAlerterConfig = {
     host: string;
     secure: boolean;
@@ -251,6 +292,8 @@ export type Config = {
         email: EmailAlerterConfig;
     } & {
         telegram: TelegramAlerterConfig;
+    } & {
+        slack: SlackAlerterConfig;
     } & {
         templateString?: string;
     };
