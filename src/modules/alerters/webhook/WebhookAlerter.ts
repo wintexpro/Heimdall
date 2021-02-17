@@ -1,6 +1,7 @@
 import { IAlerter } from '../IAlerter';
 import { WebhookAlerterConfig } from '../../config/schema';
 import fetch from 'node-fetch';
+import { StreamValue } from 'src/modules/loki/types';
 
 export class WebhookAlerter implements IAlerter {
     public webhookUrl: string;
@@ -17,11 +18,11 @@ export class WebhookAlerter implements IAlerter {
         }
     }
 
-    public async alert(message: string): Promise<boolean> {
+    public async alert(message: string, rawData: StreamValue[]): Promise<boolean> {
         if (message.length > 0) {
             await fetch(this.webhookUrl, {
                 method: 'post',
-                body: JSON.stringify({ text: message }),
+                body: JSON.stringify({ result: rawData }),
                 headers: this.headers,
             }).catch((e) => console.log(`webhook alert error: ${e.message}`));
         }

@@ -1,3 +1,5 @@
+import { StreamValue } from '../loki/types';
+
 export class TemplateManager {
     public templateString: string;
 
@@ -5,7 +7,7 @@ export class TemplateManager {
         this.templateString = templateString;
     }
 
-    public async template(lokiRoundtripResult: string[][]): Promise<string> {
+    public async template(lokiRoundtripResult: StreamValue[]): Promise<string> {
         let message = '';
         if (this.templateString) {
             for (const lokiResult of lokiRoundtripResult) {

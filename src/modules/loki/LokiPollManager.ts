@@ -1,26 +1,7 @@
 import { IAlerter } from '../alerters/IAlerter';
 import fetch from 'node-fetch';
 import { TemplateManager } from '../templating';
-
-type LokiConfig = {
-    host: string;
-    port: number;
-    poll: {
-        every: string;
-        label: string[];
-    };
-    aggregation: {
-        key: string;
-        limit: number;
-        timeFrame: string;
-    };
-};
-
-// result data from Loki (when resultType = "streams")
-type LokiStreamResult = {
-    stream: Record<string, string>;
-    values: string[][];
-};
+import { LokiConfig, LokiStreamResult, StreamValue } from './types';
 
 const aggregatedLogs = new Map<string, number>();
 
@@ -79,7 +60,7 @@ export class LokiPollManager {
             if (result.data.result.length === 0) {
                 return;
             }
-            const lokiRoundtripResult: string[][] = [];
+            const lokiRoundtripResult: StreamValue[] = [];
             (result.data.result as LokiStreamResult[]).forEach((streamData) =>
                 lokiRoundtripResult.push(...streamData.values),
             );
@@ -92,7 +73,7 @@ export class LokiPollManager {
                 }
                 return 0;
             });
-            this.alertAll(await this.templateManager.template(lokiRoundtripResult));
+            this.alertAll(await this.templateManager.template(lokiRoundtripResult), lokiRoundtripResult);
             this.lastSendingTime = currentTime;
         }
         this.lastQueryTime = currentTime;
@@ -128,9 +109,9 @@ export class LokiPollManager {
         return result;
     }
 
-    private async alertAll(message: string) {
+    private async alertAll(message: string, lokiRoundtripResult?: StreamValue[]) {
         for (const alerter of this.alerters) {
-            alerter.alert(message);
+            alerter.alert(message, lokiRoundtripResult);
         }
     }
 }
