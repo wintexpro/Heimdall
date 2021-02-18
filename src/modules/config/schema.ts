@@ -74,7 +74,7 @@ export const configValidator = new Schema({
             },
         },
         webhook: {
-            webhookUrl: {
+            url: {
                 use: {
                     requiredIfParentDefined: (val: string, ctx: any) => {
                         if (ctx.alert.webhook && val) {
@@ -114,24 +114,7 @@ export const configValidator = new Schema({
             },
         },
         slack: {
-            authToken: {
-                use: {
-                    requiredIfParentDefined: (val: string, ctx: any) => {
-                        if (ctx.alert.slack && val) {
-                            return true;
-                        }
-                        if (ctx.alert.slack === undefined) {
-                            return true;
-                        }
-                        return false;
-                    },
-                },
-                message: {
-                    requiredIfParentDefined: (path) => `if slack is defined, ${path} must be defined too`,
-                },
-                type: String,
-            },
-            channelId: {
+            webhookUrl: {
                 use: {
                     requiredIfParentDefined: (val: string, ctx: any) => {
                         if (ctx.alert.slack && val) {
@@ -291,7 +274,7 @@ export const configValidator = new Schema({
 });
 
 export type WebhookAlerterConfig = {
-    webhookUrl: string;
+    url: string;
     headers: string[];
 };
 
@@ -301,8 +284,7 @@ export type TelegramAlerterConfig = {
 };
 
 export type SlackAlerterConfig = {
-    authToken: string;
-    channelId: string;
+    webhookUrl: string;
 };
 
 export type EmailAlerterConfig = {
