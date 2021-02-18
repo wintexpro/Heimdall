@@ -17,6 +17,7 @@ Currently, we have support built in for these alert types:
 3. [Running Heimdall](#running-heimdall)
 4. [Templating](#templating)
 5. [Aggregation](#aggregation)
+6. [Webhook Body](#webhook-body)
 
 ## Config
 
@@ -38,7 +39,7 @@ Heimdall has a global configuration file, **config.yaml**, which defines several
     - chatId - unique identifier for the target telegram chat. (REQUIRED IF TELEGRAM DEFINED)
   - **slack** initialize slack alerter module, alerter will send a notification to a predefined (by url) channel
     - webhookUrl - slack webhook url. You can obtain it on <https://XXXXX.slack.com/services/new/incoming-webhook>, choose the channel, click ‘Add Incoming Webhooks Integration’ and copy the resulting URL. (REQUIRED IF SLACK DEFINED)
-  - **webhook** initialize webhook alerter module
+  - **webhook** initialize webhook alerter module.
     - url - target url for webhooks sending. (POST method with Application/Json Content-Type) (REQUIRED IF WEBHOOK DEFINED)
     - headers - is an array of headers which will be send with webhooks. Array of **header:value** strings.
   - **email** initialize email alerter module
@@ -169,3 +170,34 @@ EXTERNAL_ERR #1
 **\#number** defines amount of aggregated matches by key
 
 If aggregated matches had reached limit param, heimdall would send message immediately
+
+## Webhook Body
+
+Body of webhook is an object with only one field **result**, which contains revised result array of loki [query_range](https://grafana.com/docs/loki/latest/api/#get-lokiapiv1query_range) request. But all \<stream value\>'s values concatenated and sorted by time (nanoseconds from [0] element of values). Example:
+
+```json
+{
+  "result": [
+    [
+      "1613557491201802037",
+      "{\"message\":\"something5\",\"level\":\"info\",\"service\":\"user-service\"}"
+    ],
+    [
+      "1613557491952212928",
+      "{\"message\":\"something5\",\"level\":\"info\",\"service\":\"user-service\"}"
+    ],
+    [
+      "1613557492702503317",
+      "{\"message\":\"something5\",\"level\":\"info\",\"service\":\"user-service\"}"
+    ],
+    [
+      "1613557493202724043",
+      "{\"message\":\"something5\",\"level\":\"info\",\"service\":\"user-service\"}"
+    ],
+    [
+      "1613557493953153936",
+      "{\"message\":\"something5\",\"level\":\"info\",\"service\":\"user-service\"}"
+    ]
+  ]
+}
+```
